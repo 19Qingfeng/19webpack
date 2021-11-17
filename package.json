@@ -1,0 +1,10 @@
+{
+  "dependencies": {
+    "@babel/generator": "^7.16.0",
+    "@babel/parser": "^7.16.4",
+    "@babel/traverse": "^7.16.3",
+    "tapable": "^2.2.1",
+    "webpack": "^5.64.1",
+    "webpack-cli": "^4.9.1"
+  }
+}
