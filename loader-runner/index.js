@@ -86,7 +86,7 @@ const resolveLoader = (loader) => path.resolve(__dirname, './loaders', loader);
 
 // 获得需要处理的loaders路径
 loaders = loaders.map(resolveLoader);
-console.log(loaders, 'loaders');
+
 runLoaders(
   {
     resource: filePath, // 加载的模块路径
