@@ -1,7 +1,7 @@
 // 入口文件
 const fs = require('fs');
 const path = require('path');
-const { runLoaders } = require('loader-runner');
+const { runLoaders } = require('./core/index');
 
 // 模块路径
 const filePath = path.resolve(__dirname, './title.js');
@@ -26,6 +26,7 @@ const rules = [
   {
     test: /\.js$/,
     use: ['post1-loader', 'post2-loader'],
+    enforce: 'post',
   },
 ];
 
@@ -86,6 +87,8 @@ const resolveLoader = (loader) => path.resolve(__dirname, './loaders', loader);
 
 // 获得需要处理的loaders路径
 loaders = loaders.map(resolveLoader);
+
+console.log(loaders, 'loaders');
 
 runLoaders(
   {
