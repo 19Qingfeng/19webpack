@@ -14,7 +14,16 @@ const rules = [
   // 普通loader
   {
     test: /\.js$/,
-    use: ['normal1-loader', 'normal2-loader'],
+    use: [
+      'normal1-loader',
+      'normal2-loader',
+      {
+        loader: path.resolve(__dirname, './loaders/babel-loader/index.js'),
+        options: {
+          name: 'wang.hayu',
+        },
+      },
+    ],
   },
   // 前置loader
   {

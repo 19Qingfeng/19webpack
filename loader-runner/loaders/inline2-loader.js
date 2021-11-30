@@ -5,7 +5,7 @@ function loader(source) {
 
 loader.pitch = function () {
   console.log('inline2 pitch');
-  return '19Qingfeng';
+  // return '19Qingfeng';
 };
 
 module.exports = loader;
