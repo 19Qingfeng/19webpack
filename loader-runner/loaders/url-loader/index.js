@@ -9,6 +9,7 @@ function urlLoader(source) {
   const options = this.getOptions() || {};
   const limit = options.limit || 1024;
   const fallback = options.fallback;
+  limit && (limit = parseInt(limit, 10));
   if (limit && source.length < limit) {
     // 获取文件类型
     const fileType = mime.getType(this.resourcePath);
