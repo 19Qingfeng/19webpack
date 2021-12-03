@@ -5,7 +5,7 @@ const traverse = require('@babel/traverse').default;
 const generator = require('@babel/generator').default;
 const t = require('@babel/types');
 const fs = require('fs');
-const { tryExtensions, toUnixPath } = require('./utils/index');
+const { tryExtensions, toUnixPath, getSourceCode } = require('./utils/index');
 
 class Compiler {
   constructor(options) {
@@ -145,13 +145,13 @@ class Compiler {
         const node = nodePath.node;
         if (node.callee.name === 'require') {
           // 获得源代码中引入模块相对路径
-          const moduleName = node.arguments[0].value;
+          const requirePath = node.arguments[0].value;
           // 寻找模块绝对路径 当前模块路径+require()对应相对路径
           const moduleDirName = path.posix.dirname(modulePath);
           const absolutePath = tryExtensions(
-            path.posix.join(moduleDirName, moduleName),
+            path.posix.join(moduleDirName, requirePath),
             this.options.resolve.extensions,
-            moduleName,
+            requirePath,
             moduleDirName
           );
           // 生成moduleId - 针对于跟路径的模块ID 添加进入新的依赖模块路径

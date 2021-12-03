@@ -25,12 +25,13 @@ module.exports = {
         test: /\.js/,
         use: [
           // 使用自己loader有三种方式 这里仅仅是一种
-          {
-            loader: path.resolve(__dirname, '../loaders/loader-1.js'),
-            options: {
-              name: 'wang.haoyu',
-            },
-          },
+          // {
+          //   loader: path.resolve(__dirname, '../loaders/loader-1.js'),
+          //   options: {
+          //     name: 'wang.haoyu',
+          //   },
+          // },
+          path.resolve(__dirname, '../loaders/loader-1.js'),
           path.resolve(__dirname, '../loaders/loader-2.js'),
         ],
       },
