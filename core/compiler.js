@@ -123,7 +123,6 @@ class Compiler {
     // 4. 返回对应module
     return module;
   }
-
   // 调用webpack进行模块编译
   handleWebpackCompiler(moduleName, modulePath) {
     // 将当前模块相对于项目启动根目录计算出相对路径 作为模块ID
