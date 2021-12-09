@@ -1,0 +1,1 @@
+exports.SyncHook = require('./SyncHook');

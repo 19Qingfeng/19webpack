@@ -1,17 +1,22 @@
-const { SyncHook } = require('./core/index');
+const Hook = require('./Hook');
 
-const syncHook = new SyncHook(['arg1', 'arg2']);
+const TAP_ASYNC = () => {
+  throw new Error('tapAsync is not supported on a SyncHook');
+};
 
-syncHook.tap('flag 1', (name, nickname) => {
-  console.log('flag 3', name, nickname);
-});
+const TAP_PROMISE = () => {
+  throw new Error('tapPromise is not supported on a SyncHook');
+};
 
-syncHook.tap('flag 2', (name, nickname) => {
-  console.log('flag 2', name, nickname);
-});
+function SyncHook(args = [], name = undefined) {
+  const hook = new Hook(args);
+  hook.constructor = SyncHook;
+  hook.tapAsync = TAP_ASYNC;
+  hook.tapPromise = TAP_PROMISE;
+  hook.compile = COMPILE;
+  return hook;
+}
 
-syncHook.tap('flag 3', (name, nickname) => {
-  console.log('flag 3:', name, nickname);
-});
+SyncHook.prototype = null;
 
-syncHook.call('wang', '19Qingfeng');
+module.exports = SyncHook;
