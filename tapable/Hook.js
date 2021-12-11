@@ -73,18 +73,22 @@ class Hook {
     this._insert(options);
   }
 
+  _resetCompilation() {
+    this.call = this._call;
+  }
+
   _insert(item) {
-    // this._resetCompilation();
+    this._resetCompilation();
     this.taps.push(item);
   }
 
   // 编译最终生成的执行函数的方法
-  _createCall() {
+  _createCall(type) {
     return this.compile({
-      taps: this.taps,
-      interceptors: this.interceptors,
-      args: this._args,
-      type: type,
+      taps: this.taps, // [{ type, fn,  name:'xxx'  } ...]
+      interceptors: this.interceptors, // 拦截器 你可以暂时忽略它
+      args: this._args, // args
+      type: type, // 类型
     });
   }
 }
