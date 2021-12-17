@@ -44,6 +44,7 @@ class Compiler {
     this.buildEntryModule(entry);
     // 导出列表;之后将每个chunk转化称为单独的文件加入到输出列表assets中
     this.exportFile(callback);
+    console.log(this.entries, 'enties');
   }
 
   // 将chunk加入输出列表中去
