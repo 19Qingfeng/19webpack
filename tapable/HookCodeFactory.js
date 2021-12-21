@@ -30,6 +30,12 @@ class HookCodeFactory {
             })
         );
         break;
+      case 'async':
+        fn = new Function(
+          // callAsync 函数生成时，会额外添加一个 callback 参数
+          this.args({ after: '_callback' }),
+          this.header() + this.contentWithInterceptors()
+        );
       // 其他类型先不考虑
       default:
         break;
@@ -46,6 +52,9 @@ class HookCodeFactory {
       return this.content(options);
     }
   }
+
+  // 生成并行调用函数内容
+  callTapsParallel() {}
 
   // 根据this._x生成整体函数内容
   callTapsSeries({ onDone }) {

@@ -6,6 +6,11 @@ const CALL_DELEGATE = function (...args) {
   return this.call(...args);
 };
 
+const CALL_ASYNC_DELEGATE = function (...args) {
+  this.callAsync = this._createCall('async');
+  return this.callAsync(...args);
+};
+
 class Hook {
   constructor(args = [], name = undefined) {
     // 保存初始化Hook时传递的参数
@@ -26,13 +31,14 @@ class Hook {
     this.compile = this.compile;
     // 相关注册方法
     this.tap = this.tap;
+    this.tapAsync = this.tapAsync;
+
+    this._callAsync = CALL_ASYNC_DELEGATE;
+    this.callAsync = CALL_ASYNC_DELEGATE;
 
     // 与SyncHook无关的代码
-    // this._callAsync = CALL_ASYNC_DELEGATE;
-    // this.callAsync = CALL_ASYNC_DELEGATE;
     // this._promise = PROMISE_DELEGATE;
     // this.promise = PROMISE_DELEGATE;
-    // this.tapAsync = this.tapAsync;
     // this.tapPromise = this.tapPromise;
   }
 
@@ -45,6 +51,10 @@ class Hook {
     // 这里我们使用的是同步 所以第一参数表示类型传入 sync
     // 如果是异步同理为sync、promise同理为 promise 这样就很好的区分了三种注册方式
     this._tap('sync', options, fn);
+  }
+
+  tapAsync(options, fn) {
+    this._tap('async', options, fn);
   }
 
   /**
