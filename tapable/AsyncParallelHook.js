@@ -9,9 +9,10 @@ class AsyncParallelCodeFactory extends HookCodeFactory {
 
 const factory = new AsyncParallelCodeFactory();
 
-class AsyncParallelHook extends Hooks {
+class AsyncParallelHook extends Hook {
   compile(options) {
-    factory.setup(options);
+    console.log(options, 'options');
+    factory.setup(this, options);
     return factory.create(options);
   }
 }

@@ -54,7 +54,20 @@ class HookCodeFactory {
   }
 
   // 生成并行调用函数内容
-  callTapsParallel() {}
+  callTapsParallel() {
+    const { taps } = this.options;
+    // counter为0时表示所有异步完成
+    // _done 为 callAsync 传入的最终完成时的函数
+    let code = `
+      var counter = ${taps.length}; \n
+      var _done = (function () { _callback() });\n
+    `;
+    // 生成并行调用函数
+    for (let i = this.options.taps.length - 1; i >= 0; i--) {
+      code += this.callTap(i, {});
+    }
+    return code;
+  }
 
   // 根据this._x生成整体函数内容
   callTapsSeries({ onDone }) {
@@ -85,6 +98,14 @@ class HookCodeFactory {
       case 'sync':
         code += `_fn${tapIndex}(${this.args()});\n`;
         break;
+      case 'async':
+        code += `_fn${tapIndex}(${this.args()},function () {
+          if(--counter === 0) {
+            _done(null)
+          }
+        });
+          \n
+        `;
       // 其他类型不考虑
       default:
         break;
