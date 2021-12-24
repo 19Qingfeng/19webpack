@@ -58,8 +58,20 @@ class HookCodeFactory {
 
   contentWithInterceptors(options) {
     // 如果存在拦截器
-    if (this.options.interceptors.length > 0) {
-      // ...
+    const interceptors = this.options.interceptors;
+    if (interceptors.length > 0) {
+      // 优先执行call拦截器
+      let code = `
+        var taps = this.taps; \n
+        var _interceptors = this.interceptors; \n
+      `;
+      interceptors.forEach((interceptor, index) => {
+        // call拦截器
+        if (interceptor.call) {
+          code += `_interceptors[${index}].call(${this.args()});\n`;
+        }
+      });
+      return code + this.content(options);
     } else {
       return this.content(options);
     }
@@ -103,6 +115,16 @@ class HookCodeFactory {
   // 编译生成单个的事件函数并且调用 比如 fn1 = this._x[0]; fn1(...args)
   callTap(tapIndex, { onDone }) {
     let code = '';
+    // 这里应该处理tap拦截器 当每一个注册方法调用时
+    const { interceptors } = this.options;
+    if (interceptors.length > 0) {
+      code += `var tap${tapIndex} = taps[${tapIndex}];\n`;
+      interceptors.forEach((interceptor, index) => {
+        if (interceptor.tap) {
+          code += `_interceptors[${index}].tap(tap${tapIndex});\n`;
+        }
+      });
+    }
     code += `var _fn${tapIndex} = ${this.getTapFn(tapIndex)};\n`;
     // 不同类型的调用方式不同
     const tap = this.options.taps[tapIndex];

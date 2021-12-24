@@ -24,7 +24,7 @@ class Hook {
     this.name = name;
     // 保存通过tap注册的内容
     this.taps = [];
-    // 保存拦截器相关内容 我们暂时先忽略拦截器
+    // 保存拦截器相关内容
     this.interceptors = [];
     // hook.call 调用方法
     this._call = CALL_DELEGATE;
@@ -92,8 +92,26 @@ class Hook {
     }
     // 合并参数 { type, fn,  name:'xxx'  }
     options = Object.assign({ type, fn }, options);
+    // 运行注册拦截器
+    options = this._runRegisterInterceptions(options);
     // 将合并后的参数插入
     this._insert(options);
+  }
+
+  // 添加拦截器
+  intercept(interceptor) {
+    this.interceptors.push(interceptor);
+  }
+
+  // 调用注册拦截器 在注册函数时立即执行
+  _runRegisterInterceptions(options) {
+    let result;
+    this.interceptors.forEach((interceptor) => {
+      if (interceptor.register) {
+        result = interceptor.register(options);
+      }
+    });
+    return result ? result : options;
   }
 
   _resetCompilation() {
@@ -111,7 +129,7 @@ class Hook {
   _createCall(type) {
     return this.compile({
       taps: this.taps, // [{ type, fn,  name:'xxx'  } ...]
-      interceptors: this.interceptors, // 拦截器 你可以暂时忽略它
+      interceptors: this.interceptors, // 拦截器也进行编译 tap函数调用以及call时需要
       args: this._args, // args
       type: type, // 类型
     });
