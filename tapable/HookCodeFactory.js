@@ -34,9 +34,21 @@ class HookCodeFactory {
         fn = new Function(
           // callAsync 函数生成时，会额外添加一个 callback 参数
           this.args({ after: '_callback' }),
-          this.header() + this.contentWithInterceptors()
+          this.header() +
+            this.contentWithInterceptors({
+              onDone: () => '_callback()',
+            })
         );
-      // 其他类型先不考虑
+        // 其他类型先不考虑
+        break;
+      case 'promise':
+        let content = this.contentWithInterceptors({
+          onDone: () => 'resolve(null)',
+        });
+        let template = `return new Promise((resolve,reject) => {
+          ${content}
+        })`;
+        fn = new Function(this.args(), this.header() + template);
       default:
         break;
     }
@@ -54,13 +66,13 @@ class HookCodeFactory {
   }
 
   // 生成并行调用函数内容
-  callTapsParallel() {
+  callTapsParallel({ onDone }) {
     const { taps } = this.options;
     // counter为0时表示所有异步完成
     // _done 为 callAsync 传入的最终完成时的函数
     let code = `
       var counter = ${taps.length}; \n
-      var _done = (function () { _callback() });\n
+      var _done = (function () { ${onDone()} });\n
     `;
     // 生成并行调用函数
     for (let i = this.options.taps.length - 1; i >= 0; i--) {
@@ -105,6 +117,16 @@ class HookCodeFactory {
           }
         });
           \n
+        `;
+        break;
+      case 'promise':
+        code += `
+          var _promise${tapIndex} = _fn${tapIndex}(${this.args()});\n
+          _promise${tapIndex}.then((resolve,reject) => {
+            if(--counter === 0) {
+              _done(null)
+            }
+          })
         `;
       // 其他类型不考虑
       default:

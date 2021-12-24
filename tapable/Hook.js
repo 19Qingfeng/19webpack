@@ -11,6 +11,11 @@ const CALL_ASYNC_DELEGATE = function (...args) {
   return this.callAsync(...args);
 };
 
+const CALL_PROMISE_DELEGATE = function (...args) {
+  this.promise = this._createCall('promise');
+  return this.promise(...args);
+};
+
 class Hook {
   constructor(args = [], name = undefined) {
     // 保存初始化Hook时传递的参数
@@ -32,9 +37,13 @@ class Hook {
     // 相关注册方法
     this.tap = this.tap;
     this.tapAsync = this.tapAsync;
+    this.tapPromise = this.tapPromise;
 
     this._callAsync = CALL_ASYNC_DELEGATE;
     this.callAsync = CALL_ASYNC_DELEGATE;
+    // 相关promise方法
+    this.promise = CALL_PROMISE_DELEGATE;
+    this._promise = CALL_PROMISE_DELEGATE;
 
     // 与SyncHook无关的代码
     // this._promise = PROMISE_DELEGATE;
@@ -55,6 +64,10 @@ class Hook {
 
   tapAsync(options, fn) {
     this._tap('async', options, fn);
+  }
+
+  tapPromise(options, fn) {
+    this._tap('promise', options, fn);
   }
 
   /**
@@ -85,6 +98,8 @@ class Hook {
 
   _resetCompilation() {
     this.call = this._call;
+    this.callAsync = this._callAsync;
+    this.promise = this._promise;
   }
 
   _insert(item) {
