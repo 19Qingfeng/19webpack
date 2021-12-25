@@ -36,14 +36,14 @@ class HookCodeFactory {
           this.args({ after: '_callback' }),
           this.header() +
             this.contentWithInterceptors({
-              onDone: () => '_callback()',
+              onDone: () => '_callback();\n',
             })
         );
         // 其他类型先不考虑
         break;
       case 'promise':
         let content = this.contentWithInterceptors({
-          onDone: () => 'resolve(null)',
+          onDone: () => 'resolve(null);\n',
         });
         let template = `return new Promise((resolve,reject) => {
           ${content}
@@ -80,15 +80,15 @@ class HookCodeFactory {
   // 生成并行调用函数内容
   callTapsParallel({ onDone }) {
     const { taps } = this.options;
-    // counter为0时表示所有异步完成
-    // _done 为 callAsync 传入的最终完成时的函数
     let code = `
       var counter = ${taps.length}; \n
       var _done = (function () { ${onDone()} });\n
     `;
     // 生成并行调用函数
     for (let i = this.options.taps.length - 1; i >= 0; i--) {
-      code += this.callTap(i, {});
+      code += this.callTap(i, {
+        onDone: () => 'if(--counter === 0) _done();',
+      });
     }
     return code;
   }
@@ -96,18 +96,30 @@ class HookCodeFactory {
   // 根据this._x生成整体函数内容
   callTapsSeries({ onDone }) {
     let code = '';
-    let current = onDone;
+    let current = onDone; // current 表示当前执行的函数内容体/ 以及调用的函数名
     // 没有注册的事件则直接返回
     if (this.options.taps.length === 0) return onDone();
     // 遍历taps注册的函数 编译生成需要执行的函数
     for (let i = this.options.taps.length - 1; i >= 0; i--) {
-      const done = current;
+      const unroll = this.options.taps[i].type !== 'sync';
+      // 长度-1开始连续生成
+      const done = current; // 上一次生成的code内容
+      if (unroll && i < this.options.taps.length - 1) {
+        code += `function next${i}(){`;
+        // 上一次的函数内容
+        code += `${current()};`;
+        code += '};';
+        // 异步同时我需要在修改current
+        current = () => `next${i}()`;
+      }
       // 一个一个创建对应的函数调用
       const content = this.callTap(i, {
-        onDone: done,
+        onDone: () => done(),
       });
+      // 修改current
       current = () => content;
     }
+    // 这里添加的是for循环中执行到最后的一次内容 直接调用的内容
     code += current();
     return code;
   }
@@ -131,12 +143,13 @@ class HookCodeFactory {
     switch (tap.type) {
       case 'sync':
         code += `_fn${tapIndex}(${this.args()});\n`;
+        if (onDone) {
+          code += onDone();
+        }
         break;
       case 'async':
         code += `_fn${tapIndex}(${this.args()},function () {
-          if(--counter === 0) {
-            _done(null)
-          }
+         ${onDone()}
         });
           \n
         `;
@@ -144,18 +157,13 @@ class HookCodeFactory {
       case 'promise':
         code += `
           var _promise${tapIndex} = _fn${tapIndex}(${this.args()});\n
-          _promise${tapIndex}.then((resolve,reject) => {
-            if(--counter === 0) {
-              _done(null)
-            }
+          _promise${tapIndex}.then(() => {\n
+            ${onDone()};\n
           })
         `;
       // 其他类型不考虑
       default:
         break;
-    }
-    if (onDone) {
-      code += onDone();
     }
     return code;
   }
