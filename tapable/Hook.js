@@ -1,5 +1,6 @@
 // 懒编译 当调用call时候才会调用方法 从而调用_createCall创建编译方法
 // 得到编译后的方法后 赋值给this.call
+
 // 最终通过 this.call(...args) 调用方法
 const CALL_DELEGATE = function (...args) {
   this.call = this._createCall('sync');
@@ -121,8 +122,49 @@ class Hook {
   }
 
   _insert(item) {
+    // 源码莫名其妙这样写 一个sort不香吗
     this._resetCompilation();
-    this.taps.push(item);
+    // 添加stage和before的逻辑
+    let before = item.before;
+    if (item.before) {
+      if (Array.isArray(before)) {
+        before = new Set(before);
+      } else {
+        before = new Set([before]);
+      }
+    }
+    let stage = 0; // 保存当前插入的stage
+    if (typeof item.stage === 'number') {
+      stage = item.stage; // 修改stage
+    }
+    let i = this.taps.length; // 通过i查找最终需要插入的索引
+    while (i > 0) {
+      i--;
+      const x = this.taps[i]; // 获得当前下标的tap
+      this.taps[i + 1] = x; // 将tap拷贝放在后一位
+      const xStage = x.stage || 0; // 获取当前下标的stage
+      // 如果当前tap传递了before before是大于stage，优先处理before之后才会处理stage
+      if (before) {
+        // 匹配当前before
+        if (before.has(x.name)) {
+          // 删除
+          before.delete(x.name);
+          continue;
+        }
+        // 如果还存在before了 优先判断before
+        if (before.size > 0) {
+          continue;
+        }
+      }
+      if (xStage > stage) {
+        continue;
+      }
+      // 当不满足条件时 表示插入元素的stage大于等于上一个元素的stage
+      // 此时我要将元素插入到对应的位置
+      i++;
+      break;
+    }
+    this.taps[i] = item;
   }
 
   // 编译最终生成的执行函数的方法
