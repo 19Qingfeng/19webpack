@@ -1,4 +1,5 @@
 const path = require('path');
+const ZipPlugin = require('../plugins/zip-plugin');
 const PluginA = require('../plugins/plugin-a');
 const PluginB = require('../plugins/plugin-b');
 module.exports = {
@@ -15,7 +16,13 @@ module.exports = {
     path: path.resolve(__dirname, './build'),
     filename: '[name].js',
   },
-  plugins: [new PluginA(), new PluginB()],
+  plugins: [
+    new PluginA(),
+    new PluginB(),
+    new ZipPlugin({
+      output: 'a/result.zip',
+    }),
+  ],
   resolve: {
     extensions: ['.js', '.ts'],
   },
