@@ -1,4 +1,4 @@
-const depModule = require('./module');
+// const depModule = require('./module');
+import _ from 'lodash';
 
-console.log(depModule, 'dep');
-console.log('This is entry 1 !');
+const a = require('vue');
