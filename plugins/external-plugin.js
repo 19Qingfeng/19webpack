@@ -1,7 +1,7 @@
-const { ExternalModule } = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const { ExternalModule } = require('webpack');
 
-const pluginName = 'ExtendsPlugin';
+const pluginName = 'ExternalsWebpackPlugin';
 
 function importHandler(parser) {
   parser.hooks.import.tap(pluginName, (statement, source) => {
@@ -23,70 +23,65 @@ function requireHandler(parser) {
   });
 }
 
-class ExtendsPlugin {
+class ExternalsWebpackPlugin {
   constructor(options) {
-    // 保存传入配置
+    // 保存参数
     this.options = options;
-    // 需要转化的所有库名称  ['lodash']
-    this.transformLibrary = Object.keys(this.options);
-    // 保存代码中使用到的外部external所有模块 用于最终在HTML中注入
+    // 保存参数传入的所有需要转化CDN外部externals的库名称
+    this.transformLibrary = Object.keys(options);
+    // 分析依赖引入 保存代码中使用到需要转化为外部CDN的库
     this.usedLibrary = new Set();
   }
+
   apply(compiler) {
-    // 首先检查Webpack Parser Modules 生成AST时检查所有import引入语句
+    // normalModuleFactory 创建后会触发该事件监听函数
     compiler.hooks.normalModuleFactory.tap(
       pluginName,
       (normalModuleFactory) => {
-        // 寻找名为 javascript/auto 的HooksMap javascript/auto 指webpack中对于所有默认模块的处理(CommonJS、AMD、ESM)会触发该钩子
-        normalModuleFactory.hooks.parser
-          .for('javascript/auto')
-          .tap(pluginName, (parser) => {
-            // 当解析到模块中的 import 语句时
-            importHandler.call(this, parser);
-            // 当解析到模块中的 require 语句时
-            requireHandler.call(this, parser);
-          });
-
-        // 判断在引入模块时 如果引入的模块是usedLibrary中的 那么直接引入外链而不进行webpack编译引入模块(拦截编译模块)
+        // 在初始化解析模块之前调用
         normalModuleFactory.hooks.factorize.tapAsync(
           pluginName,
           (resolveData, callback) => {
+            // 获取引入的模块名称
             const requireModuleName = resolveData.request;
             if (this.transformLibrary.includes(requireModuleName)) {
-              // 此时不需要normalModuleFactory进行编译了 处理成为外部模块依
+              // 如果当前模块需要被处理为外部依赖
+              // 首先获得当前模块需要转位成为的变量名
               const externalModuleName =
                 this.options[requireModuleName].variableName;
-              // 不编译了 直接创建一个外部模块对象进行返回
               callback(
                 null,
-                // 第一个参数为替换的外部模块变量
-                // 第二个参数为第一个参数对应的对象 比如 externalModuleName为_时，第二个参数为window 编译出外部模块导出为 window['_']
-                // 第三个参数为编译生成的模块名称
                 new ExternalModule(
                   externalModuleName,
                   'window',
-                  requireModuleName
+                  externalModuleName
                 )
               );
             } else {
-              // 正常解析
+              // 正常编译 不需要处理为外部依赖 什么都不做
               callback();
             }
           }
         );
+
+        // 在编译模块时触发 将模块变成为AST阶段
+        normalModuleFactory.hooks.parser
+          .for('javascript/auto')
+          .tap(pluginName, (parser) => {
+            // 当遇到模块引入语句 import 时
+            importHandler.call(this, parser);
+            // 当遇到模块引入语句 require 时
+            requireHandler.call(this, parser);
+          });
       }
     );
 
-    // 利用 html-webpack-plugin 在生成HTML文件时注入使用到的CDN
+    // HTML 生成阶段
     compiler.hooks.compilation.tap(pluginName, (compilation) => {
-      // 获取HTMLWebpackPlugin拓展的compilation Hooks
       HtmlWebpackPlugin.getHooks(compilation).alterAssetTags.tap(
         pluginName,
         (data) => {
-          console.log(data.assetTags.scripts, 'data');
-          // 额外添加scripts
           const scriptTag = data.assetTags.scripts;
-          // console.log(assetTags, 'assetTags');
           this.usedLibrary.forEach((library) => {
             scriptTag.unshift({
               tagName: 'script',
@@ -105,4 +100,4 @@ class ExtendsPlugin {
   }
 }
 
-module.exports = ExtendsPlugin;
+module.exports = ExternalsWebpackPlugin;
